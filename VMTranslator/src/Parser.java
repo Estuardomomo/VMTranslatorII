@@ -38,6 +38,7 @@ public class Parser {
         BufferedReader buffer = new BufferedReader(reader);
         writer.setFileName(address + ".asm");
         String line = buffer.readLine();
+        //writer.writeInit();
         while(line != null){
             if(line.contains("//")){
                 line = line.substring(0,line.indexOf("/"));
@@ -59,9 +60,38 @@ public class Parser {
                     writer.writePushPop("pop", arg1(), arg2());
                     break;
                 }
+                case "C_LABEL":
+                {
+                    writer.writeLabel(arg1());
+                    break;
+                }
+                case "C_RETURN":
+                {
+                    writer.writeReturn();
+                    break;
+                }
+                case "C_FUNCTION":
+                {
+                    writer.writeFunction(arg1(), arg2());
+                    break;
+                }
+                case "C_GOTO":
+                {
+                    writer.writeGoto(arg1());
+                    break;
+                }
+                case "C_IF":
+                {
+                    writer.writeIf(arg1());
+                    break;
+                }
+                case "C_CALL":
+                {
+                    writer.writeCall(arg1(), arg2());
+                    break;
+                }
                 default:
                 {
-                    String compu = "";
                     break;
                 }
             }
@@ -106,7 +136,7 @@ public class Parser {
                     {
                         argument = fragment[1];
                         argument2 = Integer.parseInt(fragment[2]);
-                        return "C_Function";
+                        return "C_FUNCTION";
                     }
                     case "goto":
                     {

@@ -15,6 +15,7 @@ import java.io.RandomAccessFile;
 public class code_writer {
         private RandomAccessFile raf;
     private int jumpFlag;
+    public String name;
     public code_writer(){ 
         jumpFlag = 0;
     }
@@ -129,6 +130,122 @@ public class code_writer {
         }catch(IOException e){}
         
     }
+    //Writes assembly code that effects the label command.
+    public void writeLabel(String label){
+    try{
+        raf.writeBytes("(" + name + "$" + label + ")\n");
+    }catch(IOException e){}
+    }
+    //Writes assembly code that effects the goto command
+    public void writeGoto(String label){
+        try{
+            raf.writeBytes("@" + name + "$" + label +"\n");
+            raf.writeBytes("0;JMP\n");
+        }catch(IOException e){}
+    }
+    //Writes assembly code that effects the if-goto command.
+    public void writeIf(String label){
+        try{
+            raf.writeBytes("@SP\n" + "AM=M-1\n" + "D=M\n" + "@" + name + "$" + label + "\n" + "D;JNE\n");
+        }catch(IOException e){}
+    }
+    //Writes assembly code that effects the call command
+    public void writeCall(String functionName, int numArgs){
+        try{
+            raf.writeBytes("@return-"+functionName+"\n");
+            raf.writeBytes(callFormat());
+            raf.writeBytes("@LCL\n");
+            raf.writeBytes(callFormat());
+            raf.writeBytes("@ARG\n");
+            raf.writeBytes(callFormat());
+            raf.writeBytes("@THIS\n");
+            raf.writeBytes(callFormat());
+            raf.writeBytes("@THAT\n");
+            raf.writeBytes(callFormat());
+            raf.writeBytes("@SP\n");
+            raf.writeBytes("D=M\n");
+            raf.writeBytes("@ARG\n");
+            raf.writeBytes("D=D-n\n");
+            raf.writeBytes("M=D-5\n");
+            raf.writeBytes("@LCL\n");
+            raf.writeBytes("M=D\n");
+            writeGoto(functionName);
+            raf.writeBytes("(return-"+functionName+")\n");
+        }catch(IOException e){}
+    }
+    //Writes assembly code that effects the return command
+    public void writeReturn(){
+      try{
+      // *(LCL - 5) -> R13
+    raf.writeBytes("@LCL\n" +
+    "D=M\n" +
+    "@5\n" +
+    "A=D-A\n" +
+    "D=M\n" +
+    "@R13\n" +
+    "M=D\n" +
+    // *(SP - 1) -> *ARG
+    "@SP\n" +
+    "A=M-1\n" +
+    "D=M\n" +
+    "@ARG\n" +
+    "A=M\n" +
+    "M=D \n" +
+    // ARG + 1 -> SP
+    "D=A+1\n" +
+    "@SP\n" +
+    "M=D\n" +
+    // *(LCL - 1) -> THAT; LCL--
+    "@LCL\n" +
+    "AM=M-1\n" +
+    "D=M\n" +
+    "@THAT\n" +
+    "M=D\n" +
+    // *(LCL - 1) -> THIS; LCL--
+    "@LCL\n" +
+    "AM=M-1\n" +
+    "D=M\n" +
+    "@THIS\n" +
+    "M=D\n" +
+    // *(LCL - 1) -> ARG; LCL--
+    "@LCL\n" +
+    "AM=M-1\n" +
+    "D=M\n" +
+    "@ARG\n" +
+    "M=D\n" +
+    // *(LCL - 1) -> LCL
+    "@LCL\n" +
+    "A=M-1\n" +
+    "D=M\n" +
+    "@LCL\n" +
+    "M=D\n" +
+    // R13 -> A
+    "@R13\n" +
+    "A=M\n" +
+    "0;JMP\n");
+      }catch(IOException e){}
+    }
+    //Writes assembly code that effects the function command
+    public void writeFunction(String functionName, int numLocals){
+        name = functionName;
+        try{
+            String functionFormat = "(" + functionName + ")\n" + "@SP\n" + "A=M\n";
+            for (int i = 0; i < numLocals; i += 1) {
+                functionFormat += "M=0\n" + "A=A+1\n";
+            }
+            raf.writeBytes(functionFormat + "D=A\n" + "@SP\n" + "M=D\n");
+        }catch(IOException e){}
+    }
+    //Writes assembly code that effects the VM initialization.
+    public void writeInit(){
+        try{
+            raf.writeBytes("@256\n");
+            raf.writeBytes("D=A");
+            raf.writeBytes("@SP\n");
+            raf.writeBytes("M=D\n");
+            writeCall("Sys.init", 0);
+        }catch(IOException e){}
+    }
     //closes the output file
     public void close()
     {
@@ -137,6 +254,9 @@ public class code_writer {
         }catch(IOException e){}
     }
     private String arithmeticFormat = "@SP\n" + "AM=M-1\n" + "D=M\n" + "A=A-1\n";
+    private String callFormat(){
+        return "D=A\n"+ "@SP\n"+"M=A\n"+"M=D\n"+"@SP\n"+"M=M+1\n";
+    }
     private String pushTemplate1(String segment, int index, boolean isDirect){
         //cuando es un puntero, solo lee la data puesta en THIS o THAT
         //cuando es estatico, solo lee la data en la dirrecion
