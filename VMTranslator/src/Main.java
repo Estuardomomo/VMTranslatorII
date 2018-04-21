@@ -1,6 +1,10 @@
 
 import java.awt.Component;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -28,15 +32,34 @@ public class Main extends javax.swing.JFrame {
     //upload source file
     private void UploadFile(Component a)
     {
-     JFileChooser dialog = new JFileChooser();
-     FileNameExtensionFilter filter = new FileNameExtensionFilter(".vm files", "vm");
-     dialog.setFileFilter(filter);
-     if(dialog.showOpenDialog(a) == JFileChooser.APPROVE_OPTION)
-     {
-         File selectedFile = dialog.getSelectedFile();
-         fileAddress = selectedFile.getPath();
-         fileAddress = fileAddress.substring(0, fileAddress.length()-3);
-     }
+        try{
+            JFileChooser dialog = new JFileChooser();
+            dialog.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            if(dialog.showOpenDialog(a) == JFileChooser.APPROVE_OPTION){
+                File selectedFile = dialog.getSelectedFile();
+                //If the selected file is a directory
+                if(selectedFile.isDirectory()){
+                    File[] fileList = selectedFile.listFiles();
+                    fileAddress = selectedFile.getPath()+ "\\" + selectedFile.getName()+ ".vm";
+                    RandomAccessFile raf = new RandomAccessFile(fileAddress,"rw");
+                    for (int i = 0; i < fileList.length; i++) {
+                        if(fileList[i].getPath().contains(".vm")){
+                            FileReader reader = new FileReader(fileList[i].getPath());
+                            BufferedReader buffer = new BufferedReader(reader);
+                            String line = buffer.readLine();
+                            while(line!=null){
+                                raf.writeBytes(line+"\n");
+                                line = buffer.readLine();
+                            }
+                        }
+                    }
+                    raf.close();
+                }else{ //if the selected file is a .vm file
+                    fileAddress = selectedFile.getPath();
+                }
+                fileAddress = fileAddress.substring(0, fileAddress.length()-3);
+            }
+        }catch(IOException e){}
     }
     /**
      * This method is called from within the constructor to initialize the form.

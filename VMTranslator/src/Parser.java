@@ -38,7 +38,7 @@ public class Parser {
         BufferedReader buffer = new BufferedReader(reader);
         writer.setFileName(address + ".asm");
         String line = buffer.readLine();
-        //writer.writeInit();
+        writer.writeInit();
         while(line != null){
             if(line.contains("//")){
                 line = line.substring(0,line.indexOf("/"));

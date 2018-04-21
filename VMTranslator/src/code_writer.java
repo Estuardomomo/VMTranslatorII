@@ -109,19 +109,19 @@ public class code_writer {
         if(!segment.equals("constant")){
             if(command.equals("push")){
                 if(segment.equals("temp")){
-                    raf.writeBytes(pushTemplate1(abbreviation, index+5, false));
+                    raf.writeBytes(pushTemplate(abbreviation, index+5, false));
                 }else if(segment.equals("pointer")){
-                    raf.writeBytes(pushTemplate1(abbreviation, index, true));
+                    raf.writeBytes(pushTemplate(abbreviation, index, true));
                 }else{
-                raf.writeBytes(pushTemplate1(abbreviation, index, false));
+                raf.writeBytes(pushTemplate(abbreviation, index, false));
                 }
         }else{
                 if(segment.equals("temp")){
-                    raf.writeBytes(popTemplate1(abbreviation, index +5,false));
+                    raf.writeBytes(popTemplate(abbreviation, index +5,false));
                 }else if(segment.equals("pointer")){
-                    raf.writeBytes(popTemplate1(abbreviation, index, true));
+                    raf.writeBytes(popTemplate(abbreviation, index, true));
                 }else{
-                    raf.writeBytes(popTemplate1(abbreviation, index,false));
+                    raf.writeBytes(popTemplate(abbreviation, index,false));
                 }
                 
         }
@@ -164,9 +164,14 @@ public class code_writer {
             raf.writeBytes(callFormat());
             raf.writeBytes("@SP\n");
             raf.writeBytes("D=M\n");
+            raf.writeBytes("@"+numArgs+"\n");
+            raf.writeBytes("D=D-A\n");
             raf.writeBytes("@ARG\n");
-            raf.writeBytes("D=D-n\n");
-            raf.writeBytes("M=D-5\n");
+            raf.writeBytes("M=D-1\n");
+            raf.writeBytes("M=M-1\n");
+            raf.writeBytes("M=M-1\n");
+            raf.writeBytes("M=M-1\n");
+            raf.writeBytes("M=M-1\n");
             raf.writeBytes("@LCL\n");
             raf.writeBytes("M=D\n");
             writeGoto(functionName);
@@ -240,7 +245,7 @@ public class code_writer {
     public void writeInit(){
         try{
             raf.writeBytes("@256\n");
-            raf.writeBytes("D=A");
+            raf.writeBytes("D=A\n");
             raf.writeBytes("@SP\n");
             raf.writeBytes("M=D\n");
             writeCall("Sys.init", 0);
@@ -257,7 +262,7 @@ public class code_writer {
     private String callFormat(){
         return "D=A\n"+ "@SP\n"+"M=A\n"+"M=D\n"+"@SP\n"+"M=M+1\n";
     }
-    private String pushTemplate1(String segment, int index, boolean isDirect){
+    private String pushTemplate(String segment, int index, boolean isDirect){
         //cuando es un puntero, solo lee la data puesta en THIS o THAT
         //cuando es estatico, solo lee la data en la dirrecion
         String noPointerCode = (isDirect)? "" : "@" + index + "\n" + "A=D+A\nD=M\n";
@@ -271,7 +276,7 @@ public class code_writer {
                 "@SP\n" +
                 "M=M+1\n";    
     }
-    private String popTemplate1(String segment, int index, boolean isDirect){  
+    private String popTemplate(String segment, int index, boolean isDirect){  
         String noPointerCode = (isDirect)? "D=A\n" : "D=M\n@" + index + "\nD=D+A\n";
 
         return "@" + segment + "\n" +
